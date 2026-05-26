@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Savas Labs — Email Signature Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --coral: #FF5A42;
+      --dark: #221C35;
+      --bg: #F8F7F5;
+      --white: #ffffff;
+      --border: #E2E0DA;
+      --muted: #6B6880;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+
+    .header-bar {
+      width: 4px;
+      height: 40px;
+      background: var(--coral);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1.2;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .steps {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .steps h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .steps ol {
+      list-style: none;
+      counter-reset: steps;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .steps ol li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--dark);
+    }
+
+    .steps ol li::before {
+      content: counter(steps);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      background: var(--coral);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 50%;
+      margin-top: 1px;
+    }
+
+    .steps ol li a { color: var(--coral); text-decoration: none; font-weight: 500; }
+    .steps ol li a:hover { text-decoration: underline; }
+
+    .form-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+
+    .form-card h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input {
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(255,90,66,0.1); }
+    input::placeholder { color: #BBB8C8; }
+
+    .btn-generate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 44px;
+      background: var(--coral);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-generate:hover { background: #e84d37; }
+    .btn-generate:active { transform: scale(0.99); }
+
+    .preview-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 32px;
+      display: none;
+    }
+
+    .preview-card.visible { display: block; }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .preview-header h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .preview-actions { display: flex; gap: 8px; }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--dark);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-secondary:hover { background: var(--bg); border-color: #ccc; }
+
+    .btn-primary-sm {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 6px;
+      background: var(--coral);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary-sm:hover { background: #e84d37; }
+
+    .preview-frame {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      background: var(--bg);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark);
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .preview-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="header-bar"></div>
+    <div class="header-text">
+      <h1>Email Signature Generator</h1>
+      <p>Savas Labs — generate your team signature in seconds</p>
+    </div>
+  </div>
+
+  <div class="steps">
+    <h2>How to install</h2>
+    <ol>
+      <li>Fill out the form below and click <strong>Generate Signature</strong></li>
+      <li>Click <strong>Copy Signature</strong> in the preview — or download the HTML file and open it in Chrome</li>
+      <li>Select all (<kbd>⌘A</kbd>) and copy (<kbd>⌘C</kbd>) the page content</li>
+      <li>Go to <a href="https://mail.google.com/mail/u/0/#settings/general" target="_blank">Gmail Settings → General</a> and paste into the <strong>Signature</strong> field</li>
+      <li>Check <em>"Insert this signature before quoted text in replies"</em></li>
+      <li>Scroll down and click <strong>Save Changes</strong></li>
+    </ol>
+  </div>
+
+  <div class="form-card">
+    <h2>Your Information</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" placeholder="First name" />
+      </div>
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" placeholder="Last name" />
+      </div>
+      <div class="form-group full">
+        <label for="title">Title</label>
+        <input type="text" id="title" placeholder="Your job title" />
+      </div>
+      <div class="form-group full">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="(000) 000-0000" />
+      </div>
+    </div>
+    <button class="btn-generate" onclick="generateSignature()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      Generate Signature
+    </button>
+  </div>
+
+  <div class="preview-card" id="previewCard">
+    <div class="preview-header">
+      <h2>Preview</h2>
+      <div class="preview-actions">
+        <button class="btn-secondary" onclick="downloadSignature()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download HTML
+        </button>
+        <button class="btn-primary-sm" onclick="copySignature()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy Signature
+        </button>
+      </div>
+    </div>
+    <div class="preview-frame">
+      <div id="signaturePreview"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const LOGO_DATA_URI = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDYwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMF8yODBfMTAyNDgpIj4KPHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIHJ4PSIzMDAiIGZpbGw9IiNGRjVBNDIiLz4KPHBhdGggZD0iTTI0Ni42OTEgMjc3LjE0MUMyMjguMTUxIDI3Ny4xNDEgMjEzLjA2MSAyNjIuMDUxIDIxMy4wNjEgMjQzLjU0MUMyMTMuMDYxIDIyNS4wMzEgMjI4LjE1MSAyMDkuOTQxIDI0Ni42OTEgMjA5Ljk0MUMyNjUuMjMxIDIwOS45NDEgMjgwLjMyMSAyMjUuMDMxIDI4MC4zMjEgMjQzLjU0MUMyODAuMzIxIDI2Mi4wNTEgMjY1LjIzMSAyNzcuMTQxIDI0Ni42OTEgMjc3LjE0MVpNMzg2LjkxMSAyNDMuNTQxQzM4Ni45MTEgMjI1LjAwMSAzNzEuODIxIDIwOS45NDEgMzUzLjI4MSAyMDkuOTQxQzMzNC43NDEgMjA5Ljk0MSAzMTkuNjUxIDIyNS4wMzEgMzE5LjY1MSAyNDMuNTQxQzMxOS42NTEgMjYyLjA1MSAzMzQuNzQxIDI3Ny4xNDEgMzUzLjI4MSAyNzcuMTQxQzM3MS44MjEgMjc3LjE0MSAzODYuOTExIDI2Mi4wNTEgMzg2LjkxMSAyNDMuNTQxWk01MDEuNjkxIDUwMS42OTFDNTAxLjY5MSA0NjQuOTQxIDQ5MS44NTEgNDMwLjUwMSA0NzQuNjkxIDQwMC44MzFDNDY0LjIyMSAzODIuNzQxIDQ1MC45OTEgMzY2LjQyMSA0MzUuNjMxIDM1Mi40NDFDNDM1LjMwMSAzNTIuMTQxIDQzNC45NzEgMzUxLjg3MSA0MzQuNjcxIDM1MS42MDFDNDMzLjIwMSAzNTAuMjgxIDQzMS43MzEgMzQ4Ljk5MSA0MzAuMjMxIDM0Ny43MzFDNDI5Ljc1MSAzNDcuMzQxIDQyOS4yNzEgMzQ2Ljk1MSA0MjguNzkxIDM0Ni41MzFDNDI4LjEwMSAzNDUuOTYxIDQyNy40NDEgMzQ1LjM5MSA0MjYuNzUxIDM0NC44MjFDNDI2Ljc1MSAzNDQuODIxIDQyNi43NTEgMzQ0LjgyMSA0MjYuNzUxIDM0NC44NTFDNDI2Ljc1MSAzNDQuODUxIDQyNi43NTEgMzQ0Ljg1MSA0MjYuNzUxIDM0NC44MjFDNDI2LjI0MSAzNDQuNDAxIDQyNS43MDEgMzQ0LjAxMSA0MjUuMTkxIDM0My41OTFDNDI0LjcxMSAzNDMuMjMxIDQyMy43ODEgMzQyLjQ4MSA0MjMuNzgxIDM0Mi40ODFDMzk4LjI1MSAzMjIuNjIxIDM2Ny44NjEgMzA4LjczMSAzMzQuNjUxIDMwMi45NzFDMzMwLjAwMSAzMDIuMTYxIDMyNS4yOTEgMzAzLjkzMSAzMjIuMjMxIDMwNy41MDFMMjk5Ljk3MSAzMzMuNjAxTDI3Ny43MTEgMzA3LjUwMUMyNzQuNjUxIDMwMy45MzEgMjY5Ljk0MSAzMDIuMTYxIDI2NS4yOTEgMzAyLjk3MUMyMzAuNzkxIDMwOC45NDEgMTk5LjI5MSAzMjMuNzAxIDE3My4xOTEgMzQ0LjgyMUMxNjcuODUxIDMyOS43NjEgMTY1LjEyMSAzMTMuNDcxIDE2NS41NDEgMjk2LjQ5MUMxNjcuNDAxIDIyMy44OTEgMjI3LjI1MSAxNjUuNTcxIDI5OS44ODEgMTY1LjUxMUMzNzQuMDcxIDE2NS40NTEgNDM0LjQzMSAyMjUuODExIDQzNC40MzEgMjk5Ljk3MUM0MzQuNDMxIDMwNi45MDEgNDMzLjg5MSAzMTMuNzQxIDQzMi44NzEgMzIwLjM3MUM0MzIuMjExIDMyNC42NjEgNDMzLjkyMSAzMjguOTgxIDQzNy4zMTEgMzMxLjcxMUM0NTAuNzgxIDM0Mi42MDEgNDYyLjc4MSAzNTQuOTAxIDQ3My4yMjEgMzY4LjQ5MUM0NzguMTExIDM3NC44NTEgNDg4LjEzMSAzNzMuMTcxIDQ5MC43NDEgMzY1LjU4MUM0OTcuODIxIDM0NS4wMDEgNTAxLjY2MSAzMjIuOTIxIDUwMS42NjEgMjk5Ljk0MUM1MDEuNjYxIDI0OS40ODEgNDgzLjEyMSAyMDMuMzQxIDQ1Mi40OTEgMTY3Ljk3MUM0NDkuMjIxIDE2NC4xOTEgNDQ5LjE2MSAxNTguNjExIDQ1Mi40MDEgMTU0LjgwMUw0NzcuOTYxIDEyNC44MzFDNDgxLjY4MSAxMjAuNDgxIDQ3OC41OTEgMTEzLjczMSA0NzIuODMxIDExMy43MzFINDEwLjg1MUMzOTIuMTkxIDExMy43MzEgMzczLjU5MSAxMTEuMTgxIDM1NS42NTEgMTA2LjAyMUMzMzcuOTUxIDEwMC45NTEgMzE5LjI2MSA5OC4yMjA3IDI5OS45NDEgOTguMjIwN0MyODAuNjIxIDk4LjIyMDcgMjYxLjkzMSAxMDAuOTUxIDI0NC4yMzEgMTA2LjAyMUMyMjYuMjkxIDExMS4xODEgMjA3LjY5MSAxMTMuNzMxIDE4OS4wMzEgMTEzLjczMUgxMjcuMDUxQzEyMS4zMjEgMTEzLjczMSAxMTguMjAxIDEyMC40NTEgMTIxLjkyMSAxMjQuODMxTDE0Ny40ODEgMTU0LjgwMUMxNTAuNzIxIDE1OC42MTEgMTUwLjY2MSAxNjQuMTkxIDE0Ny4zOTEgMTY3Ljk3MUMxMTYuNzYxIDIwMy4zNDEgOTguMjIwNyAyNDkuNDgxIDk4LjIyMDcgMjk5Ljk0MUM5OC4yMjA3IDMzMC42NjEgMTA1LjEyMSAzNTkuNzYxIDExNy4zOTEgMzg1LjgzMUMxMTguMzgxIDM4Ny45MzEgMTE5LjQwMSAzODkuOTcxIDEyMC40NTEgMzkyLjA0MUMxMjAuNzgxIDM5Mi43MDEgMTIxLjExMSAzOTMuMzYxIDEyMS40NzEgMzkzLjk5MUMxMjEuODYxIDM5NC43MTEgMTIyLjIyMSAzOTUuNDMxIDEyMi42MTEgMzk2LjE1MUMxMjMuNDUxIDM5Ny43MTEgMTI0LjMyMSAzOTkuMjcxIDEyNS4xOTEgNDAwLjgwMUMxMjQuMjAxIDQwMi40ODEgMTIzLjI3MSA0MDQuMTkxIDEyMi4zNDEgNDA1LjkzMUMxMjEuNzQxIDQwNy4wNDEgMTIxLjE3MSA0MDguMTUxIDEyMC42MDEgNDA5LjI2MUMxMjAuMzMxIDQwOS44MDEgMTIwLjAzMSA0MTAuMzQxIDExOS43NjEgNDEwLjg4MUMxMTkuMDExIDQxMi4zNTEgMTE4LjI5MSA0MTMuODIxIDExNy42MDEgNDE1LjMyMUMxMTcuNTQxIDQxNS40NzEgMTE3LjQ1MSA0MTUuNjIxIDExNy4zOTEgNDE1Ljc3MUMxMTYuNjExIDQxNy4zOTEgMTE1Ljg2MSA0MTkuMDQxIDExNS4xNDEgNDIwLjcyMUMxMDQuMjgxIDQ0NS41MDEgOTguMjIwNyA0NzIuODMxIDk4LjIyMDcgNTAxLjYzMUM5OC4yMjA3IDU0OS45OTEgMTE1LjIzMSA1OTQuMzYxIDE0My42MTEgNjI5LjEwMUMxODAuNTcxIDY3NC4zNzEgMjM2Ljc5MSA3MDMuMjkxIDI5OS43OTEgNzAzLjM1MUMzMDguNTIxIDcwMy4zNTEgMzE3LjEzMSA3MDIuODExIDMyNS41OTEgNzAxLjcwMUMzMzUuMTMxIDcwMC40NzEgMzM3LjY1MSA2ODcuODcxIDMyOS4zMTEgNjgzLjAxMUMzMDguNzkxIDY3MS4wNzEgMjg5LjkyMSA2NTYuNTIxIDI3Mi45MTEgNjM5LjU0MUMyNzIuOTExIDYzOS41NDEgMjcyLjg1MSA2MzkuNDgxIDI3Mi44MjEgNjM5LjQ1MUMyNjguMDgxIDYzNC43MTEgMjYyLjQxMSA2MzAuOTYxIDI1Ni4wNTEgNjI4Ljc0MUMyMzEuMzkxIDYyMC4yMjEgMjA5Ljk0MSA2MDQuNzExIDE5NC4xMzEgNTg0LjU4MUMxNzYuMTYxIDU2MS43MjEgMTY1LjQyMSA1MzIuODkxIDE2NS40MjEgNTAxLjYzMUMxNjUuNDIxIDQ4NS45MTEgMTY4LjE1MSA0NzAuODIxIDE3My4xMDEgNDU2LjgxMUMxNzIuODkxIDQ1Ni42MzEgMTcyLjY4MSA0NTYuNDgxIDE3Mi41MDEgNDU2LjMwMUMxNzIuNzExIDQ1Ni40ODEgMTcyLjkyMSA0NTYuNjMxIDE3My4xMDEgNDU2LjgxMUMxODAuODQxIDQzNS4wMzEgMTk0LjA0MSA0MTUuODAxIDIxMS4wNTEgNDAwLjgwMUMyMzQuNzUxIDM3OS44OTEgMjY1Ljg2MSAzNjcuMTcxIDI5OS44ODEgMzY3LjE3MUMzMzMuOTAxIDM2Ny4xNzEgMzY1LjAxMSAzNzkuODkxIDM4OC43MTEgNDAwLjgwMUM0MDUuNzIxIDQxNS44MDEgNDE4LjkyMSA0MzUuMDMxIDQyNi42NjEgNDU2LjgxMUM0MzEuNjQxIDQ3MC44NTEgNDM0LjM0MSA0ODUuOTQxIDQzNC4zNDEgNTAxLjYzMUM0MzQuMzQxIDUwMS42MzEgNDM0LjM0MSA1MDEuNjYxIDQzNC4zNDEgNTAxLjY5MVY2MzIuOTQxQzM5Ni4wOTEgNjI2LjAxMSAzNjAuNDUxIDYwNy45MjEgMzMyLjYxMSA1ODAuMTQxQzI5Ni4zMTEgNTQzLjkzMSAyNzYuMzAxIDQ5NS43MjEgMjc2LjMwMSA0NDQuNDUxQzI3Ni4zMDEgNDI5LjE1MSAyNzguMTAxIDQxNC4wNjEgMjgxLjY0MSAzOTkuMzkxQzI4My4zNTEgMzkyLjI4MSAyNzYuNzgxIDM4NS45NTEgMjY5LjcwMSAzODcuODExQzI1Mi4yMTEgMzkyLjQ2MSAyMzUuODkxIDQwMS4xMzEgMjIyLjA5MSA0MTMuMzExQzIyMS4xMDEgNDE0LjE4MSAyMjAuMTQxIDQxNS4wODEgMjE5LjE4MSA0MTUuOTgxQzIxMi45NzEgNDIxLjg2MSAyMDkuMzQxIDQyOS45OTEgMjA5LjE2MSA0MzguNTQxQzIwOS4xMDEgNDQwLjUyMSAyMDkuMTAxIDQ0Mi41MDEgMjA5LjEwMSA0NDQuNDgxQzIwOS4xMDEgNDc5LjQwMSAyMTUuOTQxIDUxMy4zMzEgMjI5LjQ3MSA1NDUuMjUxQzI0Mi41MjEgNTc2LjA5MSAyNjEuMTgxIDYwMy43NTEgMjg0Ljk0MSA2MjcuNTExQzMwOC43MDEgNjUxLjI3MSAzMzYuMzkxIDY2OS45MzEgMzY3LjIwMSA2ODIuOTgxQzM5OS4xNTEgNjk2LjQ4MSA0MzMuMDUxIDcwMy4zNTEgNDY3Ljk3MSA3MDMuMzUxSDQ5MS40OTFDNDk3LjA3MSA3MDMuMzUxIDUwMS41NzEgNjk4LjgyMSA1MDEuNTcxIDY5My4yNzFWNTAxLjY2MUw1MDEuNjkxIDUwMS42OTFaIiBmaWxsPSIjMUExRDJFIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDBfMjgwXzEwMjQ4Ij4KPHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI2MDAiIHJ4PSIzMDAiIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg==";
+
+  function buildSignatureHTML(first, last, title, phone) {
+    const slug = `${first.toLowerCase()}_${last.toLowerCase()}`;
+    const phoneFormatted = phone || '(000) 000-0000';
+    const phoneHref = phoneFormatted.replace(/\D/g, '');
+
+    return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tbody><tr>
+    <td>
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tbody><tr>
+          <td height="36px" style="font-size: 0px;">&nbsp;</td>
+        </tr></tbody>
+      </table>
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tbody><tr>
+          <td width="3px" style="vertical-align: top; background-color: #FF5A42; font-size: 0px;">&nbsp;</td>
+          <td width="14px"></td>
+          <td width="20px" style="vertical-align: top;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="12px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+            <img alt="Company logo" width="30" height="30" src="${LOGO_DATA_URI}" style="border-radius: 50%;">
+          </td>
+          <td width="11px"></td>
+          <td>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="12px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td style="font-family: -apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,Oxygen-Sans,Ubuntu,Cantarell,&quot;Helvetica Neue&quot;,sans-serif; color: #FF5A42; font-weight: 900; font-size: 18px; line-height: 17px;">${first}<br>${last}</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="14px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td style="font-family: -apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,Oxygen-Sans,Ubuntu,Cantarell,&quot;Helvetica Neue&quot;,sans-serif; color: #221C35; font-size: 13px;">${title}</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="5px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td style="font-family: -apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,Oxygen-Sans,Ubuntu,Cantarell,&quot;Helvetica Neue&quot;,sans-serif; color: #221C35; font-size: 13px;"><a href="https://www.savaslabs.com/?utm_source=email_signature&amp;utm_medium=email&amp;utm_campaign=email_signature&amp;utm_content=${slug}" style="color: #221C35; text-decoration: none;">Savas Labs</a><span style="color: #FF5A42"> — </span><a href="tel:+1${phoneHref}" style="color: #221C35; text-decoration: none;">${phoneFormatted}</a></td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="14px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td style="font-family: -apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,Roboto,Oxygen-Sans,Ubuntu,Cantarell,&quot;Helvetica Neue&quot;,sans-serif; color: #221C35; font-size: 13px; line-height: 1.6;">Frontier Technology<br>Applied Intelligence<br>Human-centered</td>
+              </tr></tbody>
+            </table>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tbody><tr>
+                <td height="16px" style="font-size: 0px;">&nbsp;</td>
+              </tr></tbody>
+            </table>
+          </td>
+        </tr></tbody>
+      </table>
+    </td>
+  </tr></tbody>
+</table>`;
+  }
+
+  function generateSignature() {
+    const first = document.getElementById('firstName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    if (!first || !last || !title) {
+      showToast('Please fill in First Name, Last Name, and Title');
+      return;
+    }
+
+    const html = buildSignatureHTML(first, last, title, phone);
+    document.getElementById('signaturePreview').innerHTML = html;
+
+    const card = document.getElementById('previewCard');
+    card.classList.add('visible');
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function copySignature() {
+    const first = document.getElementById('firstName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const html = buildSignatureHTML(first, last, title, phone);
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const item = new ClipboardItem({ 'text/html': blob });
+    navigator.clipboard.write([item])
+      .then(() => showToast('Signature copied to clipboard!'))
+      .catch(() => {
+        const el = document.getElementById('signaturePreview');
+        const range = document.createRange();
+        range.selectNode(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        showToast('Signature copied!');
+      });
+  }
+
+  function downloadSignature() {
+    const first = document.getElementById('firstName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const html = buildSignatureHTML(first, last, title, phone);
+
+    const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Email Signature</title></head>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, sans-serif;">
+${html}
+</body>
+</html>`;
+
+    const slug = `${first.toLowerCase()}_${last.toLowerCase()}`;
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `signature_${slug}.html`;
+    a.click();
+    showToast('Signature downloaded!');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') generateSignature();
+    });
+  });
+</script>
+
+</body>
+</html>
